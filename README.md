@@ -46,6 +46,11 @@
 ## About The Project
 
 The algorithm is developped based on the method proposed in the article *Learning by trial and error* (2009) by P. Young.
+The algorithm makes use of the celebrated Blackwell Approachability Theorem for two-player games with vector payoffs that implies the existence of a “no-regret” algorithm for a simple online learning problem. 
+
+regret minimization for Online Linear Optimization.
+
+
 Players learn by trial and error if they occasionally tries out new strategies, rejecting choices that are erroneous in the sense that they do not lead to higher
 payoffs. The learning rule is called interactive trial and error (ITE), implements Nash equilibrium behavior in any game with generic payoffs and at least one pure Nash equilibrium.
 
