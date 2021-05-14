@@ -116,7 +116,6 @@ def run_procedure(num_steps):
             payoff_diffs[player][old_action] = [[] for alt_action in range(num_actions(player))]
     
     for t in tqdm(range(num_steps)): # Apply regret matching up to 'RM_horizon' to make sure all strategy supports are covered
-        #print("###########################", "iteration ", str(t), "####################################")
         next_actions = []
         max_regrets = []
         mxd_stg = []
@@ -125,10 +124,8 @@ def run_procedure(num_steps):
         update_payoff_diffs(payoff_diffs, game_history[-1])
 
         for player in range(num_players): # for each player, compute the mixed strategies using the regret and draw an action
-            #print('Player ', str(player+1))
             actions = range(num_actions(player))
             old_action = game_history[-1][player]
-            #print('OLD ACTION', old_action)
             regret_array = [regret(player, old_action, alt_action, payoff_diffs, hist_length) for alt_action in actions]
             regret_matrix = [[regret(player, old_action, alt_action, payoff_diffs, hist_length) for alt_action in actions] for old_action in actions]
             max_R = np.amax(regret_matrix)
@@ -144,7 +141,6 @@ def run_procedure(num_steps):
                 prob_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
                 
             prob_matrix[old_action] = prob_array_conditional
-            #print('\t MATRIX PROBABILITY AFTER FIRST ADD ', prob_matrix)
             
             for alt_action in actions:
                 if alt_action != old_action:
@@ -152,10 +148,8 @@ def run_procedure(num_steps):
                     prob_array_other = prob_next_action(player, alt_action, regret_array)
                     prob_matrix[alt_action] = prob_array_other
             
-            #print('\t MATRIX PROBABILITY IN FINAL', prob_matrix)
             mc = qe.MarkovChain(prob_matrix)
             mc.stationary_distributions
-            #print('\t Probability vector (eigenvector)', mc.stationary_distributions[0])
             
             next_actions.append(np.random.choice(num_actions(player), p = mc.stationary_distributions[0]))
             rgt_array.append(regret_array)
