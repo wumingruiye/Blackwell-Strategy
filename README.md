@@ -1,17 +1,17 @@
 <br />
-  <h3 align="center">Learning By Trial And Error</h3>
+  <h3 align="center">Blackwell Strategy</h3>
 
   <p align="center">
-    Algorithm for learning pure Nash equilibria in finite strategic games
+    Algorithm based on Blackwell's approachability theory used for regret minimization in strategic games
     <br />
-    <a href="https://github.com/omar-bfs/Learning-By-Trial-And-Error"><strong>Explore the docs »</strong></a>
+    <a href="https://github.com/omar-bfs/Blackwell-Strategy"><strong>Explore the docs »</strong></a>
     <br />
     <br />
-    <a href="https://github.com/omar-bfs/Learning-By-Trial-And-Error">View Demo</a>
+    <a href="https://github.com/omar-bfs/Blackwell-Strategy">View Demo</a>
     ·
-    <a href="https://github.com/omar-bfs/Learning-By-Trial-And-Error/issues">Report Bug</a>
+    <a href="https://github.com/omar-bfs/Blackwell-Strategy/issues">Report Bug</a>
     ·
-    <a href="https://github.com/omar-bfs/Learning-By-Trial-And-Error/issues">Request Feature</a>
+    <a href="https://github.com/omar-bfs/Blackwell-Strategy/issues">Request Feature</a>
   </p>
 </p>
 
