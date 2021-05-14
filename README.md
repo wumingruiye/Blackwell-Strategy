@@ -45,14 +45,10 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-The algorithm is developped based on the method proposed in the article *Learning by trial and error* (2009) by P. Young.
-The algorithm makes use of the celebrated Blackwell Approachability Theorem for two-player games with vector payoffs that implies the existence of a “no-regret” algorithm for a simple online learning problem. 
 
-regret minimization for Online Linear Optimization.
+Blackwell proved in *An Analog of minmax for vector payoffs*, (1965), the existence of a “no-regret” algorithm for a wide class of simple online learning problems involving multi-objective optimization.
+In the project, we implement such an algorithm making use of the celebrated Blackwell Approachability Theorem for two-player games with vector payoffs. More specifically, at each round, players deploy mixed strategies that are derived from the stationaty distribution of the regret matrices. This procedures verifies blackwell condition and allow players' regret to approach the the negative orthant, thus minimizing their regrets. This procedure guarantees that the empirical distributions of play converge to the set of correlated equilibria of the game. For more details, see *A Simple Adaptive Procedure Leading to Correlated Equilibrium* (2000), Hart & Mas-Colell.
 
-
-Players learn by trial and error if they occasionally tries out new strategies, rejecting choices that are erroneous in the sense that they do not lead to higher
-payoffs. The learning rule is called interactive trial and error (ITE), implements Nash equilibrium behavior in any game with generic payoffs and at least one pure Nash equilibrium.
 
 <!-- <img src="https://render.githubusercontent.com/render/math?math=e^{i \pi} = -1"> -->
 
@@ -67,6 +63,7 @@ The following python packages are needed to run the program
 * [matplotlib](https://pypi.org/project/matplotlib/)
 * [nashpy](https://pypi.org/project/nashpy/)
 * [numpy](https://pypi.org/project/numpy/)
+* [qe](https://pypi.org/project/qe/)
 
 These can all be installed with pip, e.g.,  
 ```sh
