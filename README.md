@@ -63,6 +63,7 @@ The following python packages are needed to run the program
 * [matplotlib](https://pypi.org/project/matplotlib/)
 * [nashpy](https://pypi.org/project/nashpy/)
 * [numpy](https://pypi.org/project/numpy/)
+* [tqdm](https://pypi.org/project/tqdm/)
 * [qe](https://pypi.org/project/qe/)
 
 These can all be installed with pip, e.g.,  
@@ -71,7 +72,7 @@ These can all be installed with pip, e.g.,
   ```
 
 ### Execution
-Run the command: ```python3  ITE.py```
+Run the command: ```python3  BlackwellStrategy.py```
 
 <!-- CONTRIBUTING -->
 ## Contributing
