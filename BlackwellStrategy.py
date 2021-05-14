@@ -2,35 +2,21 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import random
+from math import sqrt
 import nashpy as nash
-
+import quantecon as qe # for computing the stationary distributions of a markov matrix
 from tqdm.notebook import tqdm
-import matplotlib.colors as mcolors
 
 
 
+expanded_mixed = np.array([[[2,29], [16,7]],
+                             [[4,7], [6,13]],
+                             [[4,4], [6,6]]])
 
-# Generate a mxn two_player game
-m, n = 4, 6
-game = np.random.randint(0, 100, size=(m, n, 2))
-U1 = np.zeros((m, n))
-U2 = np.zeros((m, n))
+A = np.array([[2, 16], [4, 6], [4, 6]])
+B = np.array([[29, 7], [7, 13], [4, 6]])
 
-for i in range(m):
-    for j in range(n):
-        u = game[i,j]
-        U1[i,j] = u[0]
-        U2[i,j] = u[1]
-
-# Make sure the game has at least one PURE Nash equilibrium
-g = nash.Game(U1, U2)
-eqs = g.support_enumeration()
-list(eqs)
-
-
-
-
-game_matrix = game
+game_matrix = expanded_mixed
 
 num_players = np.ndim(game_matrix) - 1
 largest_payoff = np.amax(np.ndarray.flatten(game_matrix))
@@ -39,6 +25,14 @@ print('Number of players: ', num_players)
 print('Matrix shape: ', np.shape(game_matrix))
 print('Largest payoff: ', largest_payoff)
 
+
+
+
+# Game's Nash equilibria
+game = nash.Game(A, B)
+print(game)
+eqs = game.support_enumeration()
+list(eqs)
 
 
 
@@ -53,121 +47,126 @@ for i in range(0, num_players):
 
 assert np.shape(game_matrix)[num_players] == num_players, "length of payoff array doesnt match number of players"
 
-class Player:
-    def __init__(self, name, benchmark_action, benchmark_payoff, state="d"):
-        self.name = name
-        self.benchmark_action = benchmark_action
-        self.benchmark_payoff = benchmark_payoff
-        self.state = state
-
-    def myfunc(self):
-        print("Hello my name is " + self.name)
-
-# Create Players
-dictionary_of_players = {}
-
-# Initialize actions
-initial_actions =[]
-for player in range(num_players):
-    initial_actions.append(random.randrange(num_actions(player)))
-initial_action_tuple = tuple(initial_actions)
-
-# Create players
-for player in range(num_players):
-    dictionary_of_players["Player " + str(player+1)] = Player('Player '+str(player+1), initial_action_tuple[player],  game_matrix[initial_action_tuple][player])    
-    print(dictionary_of_players["Player " + str(player+1)].name, 'Created')
-    print('\t State: ', dictionary_of_players["Player " + str(player+1)].state)
-    print('\t Action: ', dictionary_of_players["Player " + str(player+1)].benchmark_action)
-    print('\t Payoff: ', dictionary_of_players["Player " + str(player+1)].benchmark_payoff)
-    print('\n')
-    
-    
-
-def get_benchmark_profile():
-    profile = []
-    for player in range(num_players):
-        profile.append(dictionary_of_players["Player " + str(player+1)].benchmark_action)
-    return tuple(profile)
-
-def phi(a,b):
-    return(max(0, (a-b)/2*(largest_payoff+theta)))
+for i in np.ndarray.flatten(game_matrix):
+    assert i >= 0, "not all payoffs are non-negative in your game matrix"
 
 def replace_at_index(tup, index, val):
     return tup[:index] + (val,) + tup[index + 1:]
+
+def regret(player, old_action, alt_action, payoff_diffs, hist_length):
+    # payoff_diffs[player, old_action, alt_action] is an array of the difference
+    # in utilities player would have gotten in the past by playing alt_action
+    # wherever they actually played old_action
+    return max(0, sum(payoff_diffs[player][old_action][alt_action]) / hist_length)
+
+def update_payoff_diffs(payoff_diffs, action_tuple):
+    # payoff_diffs[player, old_action, alt_action] is an array of the difference
+    # in utilities player would have gotten in the past by playing alt_action
+    # wherever they actually played old_action
+    for player in range(num_players):
+        assert isinstance(action_tuple[player], int), "what your action tuple isn't made of integers in update_payoff_diffs??????"
+        old_action = action_tuple[player]
+        assert old_action in range(num_actions(player)), "what your action tuple contains actions that aren't in range for their players in update_payoff_diffs???????"
+        old_payoff = game_matrix[action_tuple][player]
+        for alt_action in range(num_actions(player)):
+            alt_action_tuple = replace_at_index(action_tuple, player,alt_action)
+            alt_payoff = game_matrix[alt_action_tuple][player]
+            payoff_diffs[player][old_action][alt_action].append(alt_payoff- old_payoff)
+
+# this function computes the distribution over new actions given a previous
+# action and an array of regrets for playing the previous action instead of
+# other actions. this array has one entry for every action, and the entry for
+# the previous action must be zero.
+def prob_next_action(player, last_action, regret_array):
+    assert regret_array[last_action] == 0, "your regret isn't zero when it should obviously be"
+    normalisation_const = (num_actions(player) - 1) * largest_payoff
+    probs_array = [regret / normalisation_const for regret in regret_array]
+    prob_last_action = 1 - sum(probs_array)
+    probs_array[last_action] = prob_last_action
+    return probs_array
 
 
 
 
 
 # this function computes a history of playing the game up to some time.
+# this function computes a history of playing the game up to some time.
 def run_procedure(num_steps):
-    game_history = [initial_action_tuple]
+    asyn = [1, 1] # boolean for the state of player 1 and 2. Initially, both players are in ASYN
+    state_history = [asyn] # list tracking the transitions from SYN <-> ASYN for both players
+
+    initial_actions = []
+    for player in range(num_players):
+        initial_actions.append(random.randrange(num_actions(player)))
+    initial_action_tuple = tuple(initial_actions)
+    initial_action_tuple = (0, 0)
+
+    game_history = [(0, 0)]
     
-    for t in tqdm(range(num_steps)):
+    max_regret_history = [] # variable to track the evolution of the maximum of the regret for each player
+    mixed_strategies = [] # Mixed strategies of each player
+    regret_matrices = []
+    regret_arrays = []
+
+    # initialise payoff_diffs
+    payoff_diffs = [[] for player in range(num_players)]
+    for player in range(num_players):
+        payoff_diffs[player] = [[] for old_action in range(num_actions(player))]
+        for old_action in range(num_actions(player)):
+            payoff_diffs[player][old_action] = [[] for alt_action in range(num_actions(player))]
+    
+    for t in tqdm(range(num_steps)): # Apply regret matching up to 'RM_horizon' to make sure all strategy supports are covered
+        #print("###########################", "iteration ", str(t), "####################################")
         next_actions = []
-        for player in range(num_players):
-            benchmark_profile = get_benchmark_profile()
-            current_player = dictionary_of_players["Player " + str(player+1)]
+        max_regrets = []
+        mxd_stg = []
+        rgt_array = []
+        hist_length = len(game_history)
+        update_payoff_diffs(payoff_diffs, game_history[-1])
+
+        for player in range(num_players): # for each player, compute the mixed strategies using the regret and draw an action
+            #print('Player ', str(player+1))
+            actions = range(num_actions(player))
+            old_action = game_history[-1][player]
+            #print('OLD ACTION', old_action)
+            regret_array = [regret(player, old_action, alt_action, payoff_diffs, hist_length) for alt_action in actions]
+            regret_matrix = [[regret(player, old_action, alt_action, payoff_diffs, hist_length) for alt_action in actions] for old_action in actions]
+            max_R = np.amax(regret_matrix)
+            max_regrets.append(max_R)
+
+            prob_array_conditional = prob_next_action(player, game_history[-1][player], regret_array)
+            rgt_array.append(regret_array)
+
+            ### Probability stochastic matrix
+            if player == 1:
+                prob_matrix = [[0, 0], [0, 0]]
+            else:
+                prob_matrix = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+                
+            prob_matrix[old_action] = prob_array_conditional
+            #print('\t MATRIX PROBABILITY AFTER FIRST ADD ', prob_matrix)
             
-            if current_player.state == 'c':
-                if random.random() < epsilon: # experiment with probability epsilon
-                    new_action = random.randrange(num_actions(player))
-                    #print('new_action', new_action)
-                    while  new_action == current_player.benchmark_action:
-                        new_action = random.randrange(num_actions(player))
-                    new_profile = replace_at_index(benchmark_profile, player, new_action)
-                    #print('new_profile', new_profile)
-                    if game_matrix[new_profile][player] <= current_player.benchmark_payoff:
-                        pass
-                    if game_matrix[new_profile][player] > current_player.benchmark_payoff:
-                        current_player.state = 'c'
-                        current_player.benchmark_payoff = game_matrix[new_profile][player]
-                        current_player.benchmark_action = new_action
-                else: # Do not experiment
-                    if game_matrix[benchmark_profile][player] < current_player.benchmark_payoff:
-                        current_player.state = 'w'
-                    if game_matrix[benchmark_profile][player] == current_player.benchmark_payoff:
-                        current_player.state = 'c'
-                    if game_matrix[benchmark_profile][player] > current_player.benchmark_payoff:
-                        current_player.state = 'h'
-                        
-            if current_player.state == 'w':
-                if game_matrix[benchmark_profile][player] < current_player.benchmark_payoff:
-                    current_player.state = 'd'
-                if game_matrix[benchmark_profile][player] == current_player.benchmark_payoff:
-                    current_player.state = 'c'
-                if game_matrix[benchmark_profile][player] > current_player.benchmark_payoff:
-                    current_player.state = 'h'   
+            for alt_action in actions:
+                if alt_action != old_action:
+                    regret_array = [regret(player, alt_action, act, payoff_diffs, hist_length) for act in actions]
+                    prob_array_other = prob_next_action(player, alt_action, regret_array)
+                    prob_matrix[alt_action] = prob_array_other
+            
+            #print('\t MATRIX PROBABILITY IN FINAL', prob_matrix)
+            mc = qe.MarkovChain(prob_matrix)
+            mc.stationary_distributions
+            #print('\t Probability vector (eigenvector)', mc.stationary_distributions[0])
+            
+            next_actions.append(np.random.choice(num_actions(player), p = mc.stationary_distributions[0]))
+            rgt_array.append(regret_array)
+            #print('next_actions ', next_actions)
 
-            if current_player.state == 'h':
-                if game_matrix[benchmark_profile][player] < current_player.benchmark_payoff:
-                    current_player.state = 'w'
-                if game_matrix[benchmark_profile][player] == current_player.benchmark_payoff:
-                    current_player.state = 'c'
-                if game_matrix[benchmark_profile][player] > current_player.benchmark_payoff:
-                    current_player.state = 'c'
-                    current_player.benchmark_payoff = game_matrix[benchmark_profile][player]
-
-            if current_player.state == 'd':
-                new_action = random.randrange(num_actions(player))
-                #print('new_action', new_action)
-                while  new_action == current_player.benchmark_action:
-                    new_action = random.randrange(num_actions(player))
-                #print('benchmark_profile', benchmark_profile)
-                new_profile = replace_at_index(benchmark_profile, player, new_action)
-                #print('new_profile', new_profile)
-                proba = phi(game_matrix[new_profile][player], game_matrix[benchmark_profile][player])
-                if random.random() < proba:
-                    current_player.state = 'c'
-                    current_player.benchmark_payoff = game_matrix[new_profile][player]
-                    current_player.benchmark_action = new_action
-                else:
-                    current_player.state = 'd'
-                    
-            next_actions.append(current_player.benchmark_action)
+        regret_arrays.append(rgt_array)
+        max_regret_history.append(max_regrets)
         game_history.append(tuple(next_actions))
-    return(game_history)
-    
+        state_history.append(asyn)
+        mixed_strategies.append(mxd_stg)
+    return(game_history, state_history, mixed_strategies, regret_arrays, max_regret_history)
     
     
    
