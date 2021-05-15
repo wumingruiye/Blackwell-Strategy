@@ -46,7 +46,7 @@
 ## About The Project
 
 
-Blackwell proved in *An Analog of minmax for vector payoffs*, (1965), the existence of a “no-regret” algorithm for a wide class of simple online learning problems involving multi-objective optimization.
+Blackwell proved in *An analog of the minimax theorem for vector payoffs*, (1965), the existence of a “no-regret” algorithm for a wide class of simple online learning problems involving multi-objective optimization.
 In the project, we implement such an algorithm making use of the celebrated Blackwell Approachability Theorem for two-player games with vector payoffs. More specifically, at each round, players deploy mixed strategies that are derived from the stationaty distribution of the regret matrices. This procedures verifies blackwell condition and allow players' regret to approach the the negative orthant, thus minimizing their regrets. This procedure guarantees that the empirical distributions of play converge to the set of correlated equilibria of the game. For more details, see *A Simple Adaptive Procedure Leading to Correlated Equilibrium* (2000), Hart & Mas-Colell.
 
 
