@@ -97,7 +97,7 @@ Link to Website: [https://omarboufous.me](https://omarboufous.me)
 
 Mail: contact@omarboufous.me
 
-Project Link: [https://github.com/omar-bfs/Learning-By-Trial-And-Error](https://github.com/omar-bfs/Learning-By-Trial-And-Error)
+Project Link: [https://github.com/oboufous/Learning-By-Trial-And-Error](https://github.com/omar-bfs/Learning-By-Trial-And-Error)
 
 <!-- ACKNOWLEDGEMENTS -->
 ## Acknowledgements
